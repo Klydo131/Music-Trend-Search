@@ -4,3 +4,5 @@ anthropic==0.42.0
 python-dotenv==1.0.1
 pydantic==2.10.4
 httpx==0.28.1
+slowapi==0.1.9
+limits==3.13.0

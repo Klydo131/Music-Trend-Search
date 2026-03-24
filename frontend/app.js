@@ -5,6 +5,25 @@
 
 const API_BASE = "";  // Same-origin; change to http://localhost:8000 for dev
 
+// ── Safe DOM helpers ───────────────────────────────────────────────────────
+/** Escape a string for safe use in HTML text nodes or attributes. */
+function esc(str) {
+  const d = document.createElement("div");
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+/**
+ * Validate a CSS color value against a strict allowlist pattern.
+ * Agent colors come from the server; reject anything that isn't a safe hex
+ * or rgb() value to prevent CSS injection via custom properties.
+ */
+function safeCssColor(value) {
+  return /^#[0-9a-fA-F]{3,8}$|^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/.test(value)
+    ? value
+    : "#6366f1";  // fallback to default accent
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
   agents: [],
@@ -71,25 +90,36 @@ async function loadAgents() {
 }
 
 function renderAgents() {
-  agentsGrid.innerHTML = state.agents
-    .map(
-      (agent) => `
-      <div
-        class="agent-card"
-        data-id="${agent.id}"
-        style="--agent-color: ${agent.color}"
-        title="${agent.tagline}"
-      >
-        <div class="agent-check">✓</div>
-        <span class="agent-icon">${agent.icon}</span>
-        <div class="agent-name">${agent.name}</div>
-        <div class="agent-tagline">${agent.tagline}</div>
-      </div>`
-    )
-    .join("");
+  agentsGrid.innerHTML = "";
 
-  agentsGrid.querySelectorAll(".agent-card").forEach((card) => {
+  state.agents.forEach((agent) => {
+    const card = document.createElement("div");
+    card.className = "agent-card";
+    // data-id is read back via dataset.id — use textContent-safe assignment
+    card.dataset.id = agent.id;
+    // CSS custom property for the accent color — validated before use
+    card.style.setProperty("--agent-color", safeCssColor(agent.color));
+    card.title = agent.tagline;  // .title is a text property, not innerHTML
+
+    const check = document.createElement("div");
+    check.className = "agent-check";
+    check.textContent = "✓";
+
+    const icon = document.createElement("span");
+    icon.className = "agent-icon";
+    icon.textContent = agent.icon;  // emoji — textContent is safe
+
+    const name = document.createElement("div");
+    name.className = "agent-name";
+    name.textContent = agent.name;
+
+    const tagline = document.createElement("div");
+    tagline.className = "agent-tagline";
+    tagline.textContent = agent.tagline;
+
+    card.append(check, icon, name, tagline);
     card.addEventListener("click", () => toggleAgent(card.dataset.id));
+    agentsGrid.appendChild(card);
   });
 }
 
@@ -185,12 +215,13 @@ function showSkeletonResults(query, agentIds) {
     .map((id) => {
       const agent = agentMap[id];
       if (!agent) return "";
+      const safeColor = safeCssColor(agent.color);
       return `
-        <div class="result-card loading" id="result-${id}">
-          <div class="result-card-accent" style="background:${agent.color}"></div>
+        <div class="result-card loading" id="result-${esc(id)}">
+          <div class="result-card-accent" style="background:${safeColor}"></div>
           <div class="result-card-header">
-            <span class="result-card-icon">${agent.icon}</span>
-            <span class="result-card-name">${agent.name}</span>
+            <span class="result-card-icon">${esc(agent.icon)}</span>
+            <span class="result-card-name">${esc(agent.name)}</span>
             <span class="result-card-duration">…</span>
           </div>
           <div class="result-card-body"></div>
