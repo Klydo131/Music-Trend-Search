@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!--
+    Content Security Policy:
+    - script-src 'self'        → only our own app.js, no inline scripts
+    - style-src 'unsafe-inline' → needed for dynamic CSS vars and markdown inline styles
+    - connect-src 'self'       → fetch() only to same origin
+    - frame-ancestors 'none'   → prevents clickjacking (supplements X-Frame-Options)
+  -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none';" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>Music Trend Search</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-icon">🎧</span>
+          <span class="logo-text">MusicTrend<span class="logo-accent">Search</span></span>
+        </div>
+        <button class="settings-btn" id="settingsToggle" title="API Settings">⚙️</button>
+      </div>
+    </header>
+
+    <!-- API Key Panel -->
+    <div class="settings-panel" id="settingsPanel" hidden>
+      <div class="settings-inner">
+        <label class="settings-label">Anthropic API Key</label>
+        <div class="settings-row">
+          <input
+            type="password"
+            id="apiKeyInput"
+            class="settings-input"
+            placeholder="sk-ant-..."
+            autocomplete="off"
+          />
+          <button class="btn btn-sm" id="saveApiKey">Save</button>
+        </div>
+        <p class="settings-hint">
+          Key is stored in browser session only. Or set <code>ANTHROPIC_API_KEY</code> on the server.
+        </p>
+      </div>
+    </div>
+
+    <!-- Hero Search -->
+    <main class="main">
+      <section class="hero">
+        <h1 class="hero-title">What's trending in music?</h1>
+        <p class="hero-sub">Pick your agents, enter a query, get expert AI analysis.</p>
+
+        <form class="search-form" id="searchForm">
+          <div class="search-box">
+            <span class="search-icon">🔎</span>
+            <input
+              type="text"
+              id="queryInput"
+              class="search-input"
+              placeholder="e.g. hip-hop trends 2025, rising indie artists, viral pop sounds..."
+              autocomplete="off"
+              maxlength="300"
+            />
+            <button type="submit" class="btn btn-primary" id="searchBtn">
+              <span class="btn-text">Search</span>
+              <span class="btn-spinner" hidden>⏳</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Agent Selector -->
+      <section class="agents-section">
+        <div class="agents-header">
+          <h2 class="agents-title">Choose your agents</h2>
+          <div class="agents-actions">
+            <button class="link-btn" id="selectAll">All</button>
+            <span class="divider">·</span>
+            <button class="link-btn" id="selectNone">None</button>
+          </div>
+        </div>
+        <div class="agents-grid" id="agentsGrid">
+          <!-- Populated by JS -->
+          <div class="agent-skeleton"></div>
+          <div class="agent-skeleton"></div>
+          <div class="agent-skeleton"></div>
+          <div class="agent-skeleton"></div>
+          <div class="agent-skeleton"></div>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section class="results-section" id="resultsSection" hidden>
+        <div class="results-header">
+          <h2 class="results-title">
+            Results for <span class="results-query" id="resultsQuery"></span>
+          </h2>
+          <span class="results-meta" id="resultsMeta"></span>
+        </div>
+        <div class="results-grid" id="resultsGrid"></div>
+      </section>
+
+      <!-- Error -->
+      <div class="error-banner" id="errorBanner" hidden>
+        <span class="error-icon">⚠️</span>
+        <span class="error-msg" id="errorMsg"></span>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-icon">🎵</div>
+        <p>Select at least one agent and enter a search query to get started.</p>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Powered by Claude Haiku · Agents run in parallel · Results are AI-generated insights</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
