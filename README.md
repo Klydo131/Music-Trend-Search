@@ -1,4 +1,19 @@
-# 🎧 Music Trend Search Engine
+# Loopline (formerly Music Trend Search)
+
+**This repo hosts two things:**
+
+1. **`web/`** — **Loopline**, the cozy music player MVP (Next.js 15 + Supabase,
+   Vercel-deployable, zero-cost). Start here: [`web/README.md`](web/README.md).
+2. **`backend/` + `frontend/`** — the original AI-powered music trend search
+   engine. Still functional; will be repurposed in Phase 1 as Loopline's
+   in-app Discover sidebar.
+
+For the full vision, principles, and cross-session context, read
+[`CLAUDE.md`](CLAUDE.md) and [`docs/PROGRESS.md`](docs/PROGRESS.md).
+
+---
+
+## Music Trend Search Engine (legacy / Phase 1 base)
 
 A lightweight, AI-powered music trend search engine. Pick the agents you want, enter a query, and get parallel expert analysis in seconds.
 
