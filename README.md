@@ -5,28 +5,23 @@ Paste a YouTube or Spotify link (or drop an MP3), sing along to synced
 lyrics, and ask 5 specialized AI agents what's rising, viral, or shifting
 in music — all in one Next.js app.
 
-- **`web/`** → the live app (Next.js 15 + Tailwind + Supabase + Vercel).
-  Start here: [`web/README.md`](web/README.md).
-- **`web/app/api/discover/route.ts`** → the trend-search engine, now a
-  Next.js API route that calls Claude directly. The 5 agents live in
-  [`web/lib/agents.ts`](web/lib/agents.ts).
-- **`backend/` + `frontend/`** → the original FastAPI + vanilla-JS
-  trend-search app. Kept for reference; scheduled for archival once the
-  Next.js route has taken a full release cycle.
+- **Next.js 15 app at the repo root** — Vercel auto-detects on deploy.
+- **`app/api/discover/route.ts`** → the trend-search engine, a Next.js
+  API route that calls Claude directly. The 5 agents live in
+  [`lib/agents.ts`](lib/agents.ts).
+- **`legacy/`** → the original FastAPI + vanilla-JS trend-search app.
+  Kept for reference only; functionally superseded by the API route.
 
 For the full vision, principles, and cross-session context, read
 [`CLAUDE.md`](CLAUDE.md) and [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ---
 
-## Loopline (the merged app)
-
-Run everything out of `web/`:
+## Run locally
 
 ```bash
-cd web
-pnpm install   # or npm install
-pnpm dev       # http://localhost:3000
+npm install
+npm run dev      # http://localhost:3000
 ```
 
 Then, on the page:
@@ -36,6 +31,18 @@ Then, on the page:
 3. **Discover** — scroll to the Discover card, click *Add API key*,
    paste your `sk-ant-...` (session-only, never persisted), pick 1–5
    agents, and ask the trend agents anything.
+
+## Deploy to Vercel
+
+The app lives at the repo root, so Vercel auto-detects the Next.js
+framework on import — no Root Directory or `vercel.json` tweak needed.
+Optional env vars in Vercel Project Settings → Environment Variables:
+
+| Var                                | Purpose                                   |
+|------------------------------------|-------------------------------------------|
+| `ANTHROPIC_API_KEY`                | Server-side fallback for Discover (BYOK still works without) |
+| `NEXT_PUBLIC_SUPABASE_URL`         | Feedback widget (optional)                |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`    | Feedback widget (optional)                |
 
 ## Discover agent roster
 
@@ -69,11 +76,34 @@ English — no stack traces, no upstream HTTP codes.
 
 Uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) — fastest, most
 cost-efficient model. Swap to Sonnet 4.6 or Opus 4.7 in
-[`web/app/api/discover/route.ts`](web/app/api/discover/route.ts) for
-deeper analysis.
+[`app/api/discover/route.ts`](app/api/discover/route.ts) for deeper
+analysis.
+
+## What's here
+
+| Path                               | Purpose                                   |
+|------------------------------------|-------------------------------------------|
+| `app/page.tsx`                     | Landing + player + playlist + Discover    |
+| `app/api/discover/route.ts`        | Parallel Claude call per selected agent   |
+| `components/Player.tsx`            | Audio engine (MP3 / YouTube / Spotify)    |
+| `components/Discover.tsx`          | Agent chips + trend search UI             |
+| `components/skins/*`               | Tape, CD, VHS visual shells               |
+| `components/SkinPicker.tsx`        | Skin + color preset controls              |
+| `components/LyricsKaraoke.tsx`     | Synced lyrics view                        |
+| `components/FunLoader.tsx`         | Entertaining loading state                |
+| `components/FriendlyError.tsx`     | Human error banner                        |
+| `components/Playlist.tsx`          | Local playlist UI                         |
+| `components/FeedbackWidget.tsx`    | 1–5 star + comment                        |
+| `lib/agents.ts`                    | 5 trend agent definitions                 |
+| `lib/discover.ts`                  | Discover client helpers + markdown        |
+| `lib/safeUrl.ts`                   | URL allowlist + source detection          |
+| `lib/youtube.ts`                   | Lazy-loader for YT IFrame API             |
+| `lib/lyrics.ts`                    | LRCLIB client + LRC parser                |
+| `lib/playlist.ts`                  | localStorage playlist CRUD                |
+| `lib/feedback.ts`                  | Supabase REST + offline queue             |
+| `legacy/`                          | Original FastAPI + vanilla-JS app         |
 
 ## Legacy FastAPI app
 
 The original FastAPI + vanilla-JS trend-search engine still boots from
-the repo root via `./run.sh` for reference. It is functionally
-superseded by the Next.js route above.
+`legacy/` via `./legacy/run.sh` for reference. Not deployed.

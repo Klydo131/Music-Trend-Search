@@ -73,19 +73,21 @@ Music-Trend-Search/
 ├── CLAUDE.md               ← you are here
 ├── docs/
 │   └── PROGRESS.md         ← running log of what shipped & what's next
-├── web/                    ← Next.js app (the player)
-│   ├── app/                ← routes
-│   ├── components/         ← React components
-│   │   └── skins/          ← tape / CD / VHS visuals
-│   ├── lib/                ← safeUrl, lyrics (LRCLIB), playlist, feedback
-│   └── public/
-├── backend/                ← existing FastAPI + 5 Anthropic trend agents
-│                             (Phase 1: repurpose as music discovery)
-├── frontend/               ← legacy vanilla-JS search UI (to archive later)
+├── app/                    ← Next.js 15 routes (player + /api/discover)
+├── components/             ← React components (Player, Discover, skins/…)
+├── lib/                    ← safeUrl, lyrics, playlist, feedback, agents, discover
+├── public/
 ├── supabase/
 │   └── migrations/         ← SQL migrations (0001_feedback.sql etc.)
+├── legacy/
+│   ├── backend/            ← original FastAPI + 5 Anthropic trend agents
+│   ├── frontend/           ← legacy vanilla-JS search UI
+│   └── run.sh              ← legacy launcher (not deployed)
 └── .github/workflows/      ← Phase 3 security crons (Dependabot, CVE scan)
 ```
+
+The Next.js app sits at the repo root so Vercel auto-detects it on
+import — no Root Directory or `vercel.json` tweak needed.
 
 ---
 
@@ -106,13 +108,13 @@ Music-Trend-Search/
 ## Running locally
 
 ```bash
-cd web
-pnpm install      # or npm install
-pnpm dev          # http://localhost:3000
+npm install
+npm run dev       # http://localhost:3000
 ```
 
-The old FastAPI/trend-search app still boots from the repo root via
-`./run.sh` for Phase 1 planning. Ignore it for the player MVP.
+The old FastAPI/trend-search app boots from `./legacy/run.sh` for
+reference only. Its agents have been ported to `lib/agents.ts` and are
+served by `/api/discover`.
 
 ---
 

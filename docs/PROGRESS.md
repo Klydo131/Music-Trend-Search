@@ -8,7 +8,8 @@ A running log of what has shipped, what's in flight, and what comes next.
 ## Phase 0 — Prototype (in progress)
 
 ### Shipped
-- [x] Next.js 15 + TS + Tailwind scaffold under `web/`
+- [x] Next.js 15 + TS + Tailwind scaffold at repo root (was previously
+      under `web/`; moved up in Phase 0 finalize so Vercel auto-detects)
 - [x] Theme: cream / peach / grape / plum / ink + soft radial gradient bg
 - [x] `lib/safeUrl.ts` — YouTube + Spotify URL detection with hostname allowlist
 - [x] `components/UrlInput.tsx` — paste OR drag-drop MP3, friendly rejection
@@ -36,8 +37,9 @@ A running log of what has shipped, what's in flight, and what comes next.
 - [ ] Manual browser test: YouTube playback, MP3 drag, Spotify embed,
       lyrics fetch, playlist persistence, feedback submit (queued if no
       Supabase env)
-- [ ] Deploy to Vercel (user action)
-- [ ] Archive the legacy `frontend/` vanilla-JS app under `legacy/`
+- [ ] Deploy to Vercel (user action — auto-detected now that the app is
+      at the repo root)
+- [x] Archive the legacy `frontend/` + `backend/` apps under `legacy/`
 
 ### Deliberate Phase-0 non-goals
 - No auth
@@ -54,15 +56,14 @@ A running log of what has shipped, what's in flight, and what comes next.
 
 - [ ] Supabase magic-link auth
 - [ ] Playlists + favorites synced per user
-- [x] Repurpose `backend/agents.py` (Chart Tracker, Viral Scout, Genre Pulse,
-      Artist Radar, Culture Lens) as in-app Discover — ported to TS in
-      Phase 0, now lives in `web/lib/agents.ts` + `/api/discover`
+- [x] Repurpose `legacy/backend/agents.py` (Chart Tracker, Viral Scout,
+      Genre Pulse, Artist Radar, Culture Lens) as in-app Discover —
+      ported to TS in Phase 0, now lives in `lib/agents.ts` +
+      `/api/discover`
 - [ ] Structured agent output → parse named tracks/artists into one-click
       playable YouTube results (currently links out to YT/Spotify search)
 - [ ] Ratings per track (not just app-level)
 - [ ] Public discovery feed (read-only)
-- [ ] Archive `backend/` + `frontend/` legacy apps under `legacy/` (the
-      Next.js API route replaces them)
 
 ---
 
