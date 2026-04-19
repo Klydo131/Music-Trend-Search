@@ -5,11 +5,13 @@ import type { Source } from "@/lib/safeUrl";
 import {
   activeLineIndex,
   fetchLyrics,
+  fetchLyricsFromAi,
   parseLrc,
   parseTrackLabel,
   type LyricLine,
   type LyricsResult,
 } from "@/lib/lyrics";
+import { loadApiKey } from "@/lib/discover";
 
 type Props = {
   source: Source;
@@ -18,6 +20,8 @@ type Props = {
   author?: string;
 };
 
+type Status = "idle" | "loading" | "none" | "ready";
+
 export default function LyricsKaraoke({
   source,
   currentTime,
@@ -25,14 +29,18 @@ export default function LyricsKaraoke({
   author,
 }: Props) {
   const [data, setData] = useState<LyricsResult | null>(null);
-  const [status, setStatus] = useState<"idle" | "loading" | "none" | "ready">(
-    "idle",
-  );
+  const [status, setStatus] = useState<Status>("idle");
   const [manual, setManual] = useState("");
   const [manualLines, setManualLines] = useState<LyricLine[] | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [hasKey, setHasKey] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Pull a reasonable {artist, title, query} out of whatever metadata we have.
+  useEffect(() => {
+    setHasKey(!!loadApiKey());
+  }, [source]);
+
   const parsed = useMemo(() => {
     if (source.kind === "mp3") {
       return parseTrackLabel(source.file.name);
@@ -53,6 +61,7 @@ export default function LyricsKaraoke({
     const controller = new AbortController();
     setStatus("loading");
     setData(null);
+    setAiError(null);
     fetchLyrics({ artist, title, query, signal: controller.signal }).then(
       (result) => {
         if (controller.signal.aborted) return;
@@ -67,8 +76,6 @@ export default function LyricsKaraoke({
     return () => controller.abort();
   }, [parsed]);
 
-  // Manual paste — support LRC format with [mm:ss] timestamps, or plain
-  // lines spaced 3s apart as a fallback (same behavior as LRCLIB plain).
   useEffect(() => {
     const text = manual.trim();
     if (!text) {
@@ -87,12 +94,42 @@ export default function LyricsKaraoke({
     }
   }, [manual]);
 
-  // Active source for rendering: manual paste wins if the user typed
-  // something, otherwise LRCLIB result.
+  async function askClaude() {
+    const key = loadApiKey();
+    if (!key) {
+      setAiError(
+        "Add your Anthropic API key in the Discover panel settings, then try again.",
+      );
+      return;
+    }
+    const { artist, title, query } = parsed;
+    if (!query && !artist && !title) {
+      setAiError(
+        "We need a song name first. Paste a YouTube link or rename the MP3 to 'Artist - Title'.",
+      );
+      return;
+    }
+    setAiLoading(true);
+    setAiError(null);
+    const result = await fetchLyricsFromAi({
+      artist,
+      title,
+      query,
+      apiKey: key,
+    });
+    setAiLoading(false);
+    if (!result) {
+      setAiError(
+        "Claude didn't recognize this track. Paste lyrics below and they'll scroll along.",
+      );
+      return;
+    }
+    setData(result);
+    setStatus("ready");
+  }
+
   const activeLines: LyricLine[] =
-    manualLines && manualLines.length > 0
-      ? manualLines
-      : data?.lines || [];
+    manualLines && manualLines.length > 0 ? manualLines : data?.lines || [];
   const activeIdx = activeLineIndex(activeLines, currentTime);
 
   useEffect(() => {
@@ -103,8 +140,14 @@ export default function LyricsKaraoke({
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [activeIdx]);
 
-  const showManualBox =
-    status === "idle" || status === "none" || !!manualLines;
+  const sourceLabel =
+    manualLines && manualLines.length > 0
+      ? "Your paste"
+      : data?.source === "claude"
+      ? "Claude's best guess"
+      : data
+      ? `${data.synced ? "Synced" : "Plain"} · LRCLIB`
+      : null;
 
   return (
     <section className="card p-4 md:p-5">
@@ -119,35 +162,52 @@ export default function LyricsKaraoke({
               {parsed.artist} · {parsed.title}
             </span>
           )}
-          {data && (
-            <span className="chip">
-              {data.synced ? "Synced" : "Plain"} · LRCLIB
-            </span>
-          )}
-          {manualLines && manualLines.length > 0 && (
-            <span className="chip">Your paste</span>
-          )}
+          {sourceLabel && <span className="chip">{sourceLabel}</span>}
         </div>
       </header>
 
       {status === "loading" && !manualLines && (
-        <p className="text-sm text-plum/60 mb-3">
-          Searching LRCLIB for lyrics…
-        </p>
+        <p className="text-sm text-plum/60 mb-3">Searching LRCLIB for lyrics…</p>
       )}
 
       {status === "idle" && !manualLines && (
         <p className="text-sm text-plum/70 mb-3">
-          We need a song name to find lyrics. Paste your own below and they'll
-          scroll along while the track plays — `[mm:ss]` timestamps are
-          supported if you want them synced.
+          Paste a YouTube link or drop an MP3 with the song name in the
+          filename and we'll try to fetch synced lyrics automatically.
         </p>
       )}
 
-      {status === "none" && !manualLines && (
-        <p className="text-sm text-plum/70 mb-3">
-          LRCLIB doesn't have this one. Paste lyrics below — plain text or
-          `[mm:ss]`-timestamped — and they'll show up while the song plays.
+      {status === "none" && !manualLines && !data && (
+        <div className="mb-3 space-y-2">
+          <p className="text-sm text-plum/70">
+            LRCLIB doesn't have this one.{" "}
+            {hasKey
+              ? "Ask Claude for a best guess, or paste your own below."
+              : "Paste your own below — or add an Anthropic API key in the Discover panel and Claude can take a guess."}
+          </p>
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              type="button"
+              className="btn-primary text-sm py-2 px-3"
+              onClick={askClaude}
+              disabled={aiLoading}
+            >
+              {aiLoading ? "Asking Claude…" : "Ask Claude for lyrics"}
+            </button>
+            {!hasKey && (
+              <span className="text-xs text-plum/60">
+                (needs your Anthropic key in Discover settings)
+              </span>
+            )}
+          </div>
+          {aiError && <p className="text-sm text-plum/70">{aiError}</p>}
+        </div>
+      )}
+
+      {data?.source === "claude" && !manualLines && (
+        <p className="text-xs text-plum/60 mb-2 italic">
+          Heads-up: Claude-generated lyrics can be off. Paste the real ones
+          below if anything looks wrong.
         </p>
       )}
 
@@ -175,23 +235,21 @@ export default function LyricsKaraoke({
         </div>
       )}
 
-      {showManualBox && (
-        <details open={status !== "ready"}>
-          <summary className="cursor-pointer text-xs font-bold text-plum/70 mb-2">
-            {manualLines ? "Edit your lyrics" : "Paste your own lyrics"}
-          </summary>
-          <textarea
-            className="input min-h-[120px] font-mono text-xs"
-            placeholder={`[00:12.00] First line\n[00:17.50] Second line\n\n…or just plain text, one line each.`}
-            value={manual}
-            onChange={(e) => setManual(e.target.value)}
-          />
-          <p className="text-[11px] text-plum/60 mt-1">
-            Your paste stays on this device. LRC timestamps (`[mm:ss.xx]`)
-            sync to the song; plain lines step every 3 seconds.
-          </p>
-        </details>
-      )}
+      <div className="border-t border-plum/10 pt-3">
+        <label className="block text-xs font-bold text-plum/70 mb-1">
+          {manualLines ? "Edit your lyrics" : "Or paste your own lyrics"}
+        </label>
+        <textarea
+          className="input min-h-[96px] font-mono text-xs"
+          placeholder={`Paste plain lines or [00:12.00] timestamped LRC.\nYour paste stays on this device.`}
+          value={manual}
+          onChange={(e) => setManual(e.target.value)}
+        />
+        <p className="text-[11px] text-plum/60 mt-1">
+          LRC timestamps (`[mm:ss.xx]`) sync to the song; plain lines step
+          every 3 seconds.
+        </p>
+      </div>
     </section>
   );
 }

@@ -12,7 +12,7 @@ export type LyricsResult = {
   lines: LyricLine[];
   plain: string;
   synced: boolean;
-  source: "lrclib";
+  source: "lrclib" | "claude";
 };
 
 const LRCLIB_BASE = "https://lrclib.net/api";
@@ -140,6 +140,54 @@ export function parseTrackLabel(
   }
 
   return { query: s };
+}
+
+/**
+ * Ask Claude for lyrics as a fallback when LRCLIB has nothing. Uses the
+ * user's BYOK Anthropic key (stored in sessionStorage by the Discover
+ * panel). Returns null when the key is missing, Claude doesn't know the
+ * song, or the network fails — every failure mode is non-fatal.
+ */
+export async function fetchLyricsFromAi(opts: {
+  artist?: string;
+  title?: string;
+  query?: string;
+  apiKey: string;
+  signal?: AbortSignal;
+}): Promise<LyricsResult | null> {
+  if (!opts.apiKey) return null;
+  try {
+    const res = await fetch("/api/lyrics", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        artist: opts.artist,
+        title: opts.title,
+        query: opts.query,
+        apiKey: opts.apiKey,
+      }),
+      signal: opts.signal,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      lines?: string[];
+      plain?: string;
+      known?: boolean;
+    };
+    if (!data.known || !data.lines || data.lines.length === 0) return null;
+    const lines: LyricLine[] = data.lines.map((text, i) => ({
+      time: i * 3,
+      text,
+    }));
+    return {
+      lines,
+      plain: data.plain || data.lines.join("\n"),
+      synced: false,
+      source: "claude",
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** Find the active line index for a given time. */
