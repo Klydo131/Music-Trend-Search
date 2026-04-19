@@ -97,6 +97,24 @@ body {
   box-shadow: 0 0 0 4px rgba(111, 74, 183, 0.15);
 }
 
+/* Discover — rendered agent markdown */
+.agent-body p { margin: 0 0 8px; }
+.agent-body p:last-child { margin-bottom: 0; }
+.agent-body .agent-h {
+  font-weight: 700;
+  color: var(--plum);
+  margin: 12px 0 6px;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+.agent-body .agent-ul {
+  margin: 6px 0 10px;
+  padding-left: 18px;
+  list-style: disc;
+}
+.agent-body .agent-ul li { margin: 2px 0; }
+.agent-body strong { color: var(--plum); font-weight: 700; }
+
 .visually-hidden {
   position: absolute;
   width: 1px; height: 1px;

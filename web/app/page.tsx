@@ -6,6 +6,7 @@ import Player from "@/components/Player";
 import FriendlyError from "@/components/FriendlyError";
 import FeedbackWidget from "@/components/FeedbackWidget";
 import Playlist from "@/components/Playlist";
+import Discover from "@/components/Discover";
 import type { Source } from "@/lib/safeUrl";
 import { addToPlaylist, type PlaylistItem } from "@/lib/playlist";
 
@@ -69,7 +70,8 @@ export default function Home() {
           Loopline
         </h1>
         <p className="text-plum/70 text-lg">
-          Your cozy music player. Paste a link, drop a song, sing along.
+          Your cozy music player + trend radar. Play, sing along, and ask
+          the agents what's hot.
         </p>
       </header>
 
@@ -115,6 +117,8 @@ export default function Home() {
         )}
 
         <Playlist onPlay={playFromList} refreshKey={listKey} />
+
+        <Discover />
 
         <footer className="text-center text-xs text-plum/50 mt-8">
           <p>

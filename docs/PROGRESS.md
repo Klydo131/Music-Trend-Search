@@ -24,6 +24,11 @@ A running log of what has shipped, what's in flight, and what comes next.
       with local queue fallback
 - [x] `supabase/migrations/0001_feedback.sql` — RLS-protected feedback table
 - [x] `CLAUDE.md` + this file — cross-session memory
+- [x] **Discover merge** — legacy trend-search engine is now in-app:
+      `lib/agents.ts` (5 agents), `app/api/discover/route.ts` (BYOK,
+      parallel Claude Haiku 4.5 calls via fetch — no SDK),
+      `components/Discover.tsx` (agent chips + results + YouTube /
+      Spotify search links)
 
 ### Still to do before calling Phase 0 done
 - [ ] `pnpm install` + `pnpm build` sanity check (needs the user's machine;
@@ -49,12 +54,15 @@ A running log of what has shipped, what's in flight, and what comes next.
 
 - [ ] Supabase magic-link auth
 - [ ] Playlists + favorites synced per user
-- [ ] Repurpose `backend/agents.py` (Chart Tracker, Viral Scout, Genre Pulse,
-      Artist Radar, Culture Lens) as in-app Discover sidebar that returns
-      playable YouTube/Spotify tracks
+- [x] Repurpose `backend/agents.py` (Chart Tracker, Viral Scout, Genre Pulse,
+      Artist Radar, Culture Lens) as in-app Discover — ported to TS in
+      Phase 0, now lives in `web/lib/agents.ts` + `/api/discover`
+- [ ] Structured agent output → parse named tracks/artists into one-click
+      playable YouTube results (currently links out to YT/Spotify search)
 - [ ] Ratings per track (not just app-level)
 - [ ] Public discovery feed (read-only)
-- [ ] Deploy FastAPI agents to Hugging Face Spaces (free)
+- [ ] Archive `backend/` + `frontend/` legacy apps under `legacy/` (the
+      Next.js API route replaces them)
 
 ---
 
