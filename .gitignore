@@ -3,14 +3,21 @@
 .env.*
 !.env.example
 
-# ── Python ───────────────────────────────────────────────────
+# ── Next.js ──────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# ── Python (legacy FastAPI app under legacy/) ────────────────
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-backend/.venv/
 .venv/
 venv/
+legacy/backend/.venv/
 *.egg-info/
 dist/
 build/
@@ -30,3 +37,6 @@ Thumbs.db
 # ── Logs ─────────────────────────────────────────────────────
 *.log
 logs/
+
+# ── Vercel ───────────────────────────────────────────────────
+.vercel/
