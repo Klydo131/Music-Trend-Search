@@ -93,6 +93,55 @@ export function parseLrc(lrc: string): LyricLine[] {
   return out;
 }
 
+/**
+ * Best-effort extraction of {artist, title} from a messy string like
+ * a YouTube title ("Artist - Title (Official Video)") or an MP3 filename
+ * ("01 - Artist - Title.mp3"). Strips common noise tags so LRCLIB's
+ * /get endpoint has a fair shot.
+ */
+export function parseTrackLabel(
+  raw: string,
+  ytAuthor?: string,
+): { artist?: string; title?: string; query: string } {
+  // Drop file extension + leading track numbers like "01 " or "01. "
+  let s = raw
+    .replace(/\.[^.]+$/, "")
+    .replace(/^\s*\d+[.\-\s]+/, "")
+    .replace(/[_]+/g, " ")
+    .trim();
+
+  // Strip bracket/paren noise: (Official Video), [Lyrics], (Audio), etc.
+  s = s
+    .replace(
+      /[\(\[\{][^\)\]\}]*\b(official|video|audio|lyric[s]?|hd|hq|4k|mv|m\/v|remaster(ed)?|live|explicit|clean|visualizer|ft|feat|featuring)\b[^\)\]\}]*[\)\]\}]/gi,
+      "",
+    )
+    .replace(/\s*\|\s*.*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Try "Artist - Title" split (em-dash, en-dash, or hyphen with spaces)
+  const splitMatch = s.match(/^(.+?)\s[-–—]\s(.+)$/);
+  if (splitMatch) {
+    const [, artist, title] = splitMatch;
+    return {
+      artist: artist.trim(),
+      title: title.trim(),
+      query: `${artist.trim()} ${title.trim()}`,
+    };
+  }
+
+  // YouTube uploader channel often = the artist (e.g. "TaylorSwiftVEVO")
+  if (ytAuthor) {
+    const artist = ytAuthor.replace(/VEVO$|Official$|Music$/i, "").trim();
+    if (artist && s) {
+      return { artist, title: s, query: `${artist} ${s}` };
+    }
+  }
+
+  return { query: s };
+}
+
 /** Find the active line index for a given time. */
 export function activeLineIndex(lines: LyricLine[], t: number): number {
   if (lines.length === 0) return -1;
