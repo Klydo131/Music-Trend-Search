@@ -28,6 +28,8 @@ export default function Player({ source, onError, label, onTrackInfo }: Props) {
   const [currentTime, setCurrentTime] = useState(0);
   const [loading, setLoading] = useState(source.kind !== "spotify");
   const [karaoke, setKaraoke] = useState(true);
+  const [ytTitle, setYtTitle] = useState<string | null>(null);
+  const [ytAuthor, setYtAuthor] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytRef = useRef<YTPlayer | null>(null);
@@ -74,6 +76,8 @@ export default function Player({ source, onError, label, onTrackInfo }: Props) {
   // ── YouTube engine ──
   useEffect(() => {
     if (source.kind !== "youtube") return;
+    setYtTitle(null);
+    setYtAuthor(null);
     let cancelled = false;
 
     const mount = document.getElementById("yt-mount");
@@ -91,6 +95,16 @@ export default function Player({ source, onError, label, onTrackInfo }: Props) {
             ytRef.current = e.target;
             setDuration(e.target.getDuration());
             setLoading(false);
+            try {
+              const info = e.target.getVideoData();
+              if (info?.title) {
+                setYtTitle(info.title);
+                onTrackInfo?.({ title: info.title, artist: info.author });
+              }
+              if (info?.author) setYtAuthor(info.author);
+            } catch {
+              /* getVideoData can throw before the player is fully ready */
+            }
           },
           onStateChange: (e) => {
             if (!window.YT) return;
@@ -300,7 +314,8 @@ export default function Player({ source, onError, label, onTrackInfo }: Props) {
         <LyricsKaraoke
           source={source}
           currentTime={currentTime}
-          label={label}
+          label={ytTitle || label}
+          author={ytAuthor || undefined}
         />
       )}
     </div>

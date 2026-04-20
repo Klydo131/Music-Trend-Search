@@ -23,6 +23,7 @@ export type YTPlayer = {
   getCurrentTime: () => number;
   getDuration: () => number;
   getPlayerState: () => number;
+  getVideoData: () => { title?: string; author?: string; video_id?: string };
   destroy: () => void;
   setVolume: (v: number) => void;
 };
